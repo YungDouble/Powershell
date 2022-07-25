@@ -6,3 +6,4 @@ Get-ChildItem *.pdf -Recurse | Where-Object {
     Remove-Item $psfile -Force
   }
 }
+}
