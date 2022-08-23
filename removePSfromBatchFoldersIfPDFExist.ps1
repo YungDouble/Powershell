@@ -1,3 +1,5 @@
+*/Remvoe instances where conversion from ps was successful*/
+
 Get-ChildItem *.pdf -Recurse | Where-Object {
   {$_.PsIsContainer -eq $True}
 } | ForEach-Object {
