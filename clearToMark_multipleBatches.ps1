@@ -1,3 +1,5 @@
+// This script is used to remove lines in .ps files so that they can be converted to PDF 
+
 $searchStringStart = "mark currentfile"
 $searchStringEnd = "cleartomark"
 $replacementString = ""
