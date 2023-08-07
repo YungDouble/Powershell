@@ -19,3 +19,5 @@ foreach ($csvFile in $csvFiles) {
 
 # Export the combined Csv
 $combineData | Export-Csv -Path $outputFile -NoTypeInformation
+
+# Getting permission eror
