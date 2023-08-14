@@ -14,10 +14,10 @@ $content = Get-Content $file.FullName -Raw
 $startIndex = $content.IndexOf($searchStringStart)
 $endIndex = $content.IndexOf($searchStringEnd, $startIndex + $searchStringStart.Length)
 
-if ($startIndex -ge 0 -and $endIndex -ge 0){
-$before = $content.Substring(0, $startIndex)
-$after = $content.Substring($endIndex + $searchStringEnd.Length)
-$content = $before + $replacementString + $after
-Set-Content $file.FullName -Value $content
-}
+  if ($startIndex -ge 0 -and $endIndex -ge 0){
+  $before = $content.Substring(0, $startIndex)
+  $after = $content.Substring($endIndex + $searchStringEnd.Length)
+  $content = $before + $replacementString + $after
+  Set-Content $file.FullName -Value $content
+  }
 }
