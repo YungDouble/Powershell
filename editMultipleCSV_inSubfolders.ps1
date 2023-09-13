@@ -13,8 +13,8 @@ Get-ChildItem -Path $rootPath -Recurse -Include *.csv | ForEach-Object {
                 $_.DocType = "Miscellaneous"
                 $_.DateofBirth = "1/1/1753"
                 $_.FirstName = "Admin"
-                $_.LastName = "SBD"
-                $_.IdentificationNumber = "GSB-AR-123"
+                $_.LastName = "RKD"
+                $_.IdentificationNumber = "RKD-AR-123"
                 
     }
 
