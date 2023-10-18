@@ -1,3 +1,5 @@
+
+
 $source = Get-Location
 $destination = Join-Path -Path $source -ChildPath "NewLocation"
 
