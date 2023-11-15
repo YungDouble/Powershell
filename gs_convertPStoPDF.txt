@@ -1,0 +1,1 @@
+"C:\Program Files\gs\gs10.02.1\bin\gswin64c.exe" -sDEVICE=pdfwrite -o output.pdf input.ps
