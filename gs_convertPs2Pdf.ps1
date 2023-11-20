@@ -1,3 +1,4 @@
+# This script is to convert .ps files to .pdf using gs
 # Set the path to the Ghostscript executable
 $ghostscriptPath = "C:\Program Files\gs\gs10.02.1\bin\gswin64c.exe"
 
