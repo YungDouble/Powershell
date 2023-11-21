@@ -3,6 +3,7 @@
 $ghostscriptPath = "C:\Program Files\gs\gs10.02.1\bin\gswin64c.exe"
 
 # Set the root folder where you want to start the conversion
+# this is set to be in the current folder, command: powershell__ise.exe to bring up the powershell console
 $rootFolder = "./"
 
 # Recursively find all .ps files in subfolders
