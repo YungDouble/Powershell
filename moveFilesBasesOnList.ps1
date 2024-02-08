@@ -1,4 +1,4 @@
-
+//
 $logfile = “C:\Dev\Temp\file_move.txt”
 $old_document_share = “C:\Users\\$env:Username\Desktop\BatchesWorkbench”
 $new_document_share = “C:\Users\\$env:Username\Desktop\Landing”
