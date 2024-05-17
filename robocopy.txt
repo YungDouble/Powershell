@@ -1,0 +1,1 @@
+robocopy "\\dc1-util-01\EXP\yfROG" "E:\4" /MIR /R:3 /W:5 /LOG:C:\robocopy_log.txt
