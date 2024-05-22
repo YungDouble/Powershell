@@ -1,1 +1,9 @@
 robocopy "\\dc1-util-01\EXP\yfROG" "E:\4" /MIR /R:3 /W:5 /LOG:C:\robocopy_log.txt
+
+robocopy \\dc1-fs-01\Ingestion Staging\ROG-SR-New.7z ./ /MIR /R:3 /W:5 /LOG:./robocopy.log
+
+C:\Users\ddehoyos>robocopy "\\dc1-fs-01\Ingestion Staging" "E:\Backup" "ROG-SR-New.7z" /R:3 /W:5 /LOG:"E:\Backup\robocopy.log" /Z
+
+ Log File : E:\Backup\robocopy.log
+
+
