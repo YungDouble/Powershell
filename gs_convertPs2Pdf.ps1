@@ -7,7 +7,7 @@ $ghostscriptPath = "C:\Program Files\gs\gs10.02.1\bin\gswin64c.exe"
 $rootFolder = "./"
 
 # Recursively find all .ps files in subfolders
-$psFiles = Get-ChildItem -Path $rootFolder -Recurse -Filter *.tif
+$psFiles = Get-ChildItem -Path $rootFolder -Recurse -Filter *.ps
 
 # Loop through each .ps file and convert to .pdf in the same folder
 foreach ($psFile in $psFiles) {
