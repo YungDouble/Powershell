@@ -1,6 +1,3 @@
-// This script is used to remove lines in .ps files so that they can be converted to PDF 
-// This is not to be shared outside YF
-// Diese script
 
 $searchStringStart = "mark currentfile"
 $searchStringEnd = "cleartomark"
