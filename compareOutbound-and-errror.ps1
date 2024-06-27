@@ -17,9 +17,10 @@ foreach ($subfolder in $subfolders1) {
     $subfolderExistsInBoth = $subfolders2 | Where-Object { $_.Name -eq $subfolderName }
 
     if ($subfolderExistsInBoth) {
+        # If the subfolder exists in both source directories, log the information
         Write-Host "Subfolder '$subfolderName' exists in both source directories."
     } else {
-        # Move the subfolder to the destination directory
+        # If the subfolder does not exist in the second source directory, move it to the destination directory
         Move-Item -Path (Join-Path -Path $sourceDirectory1 -ChildPath $subfolderName) -Destination $destinationDirectory -Force
         Write-Host "Moved subfolder '$subfolderName' from source directory 1 to '$destinationDirectory'"
     }
@@ -33,7 +34,7 @@ foreach ($subfolder in $subfolders2) {
     $subfolderExistsInBoth = $subfolders1 | Where-Object { $_.Name -eq $subfolderName }
 
     if (-not $subfolderExistsInBoth) {
-        # Move the subfolder to the destination directory
+        # If the subfolder does not exist in the first source directory, move it to the destination directory
         Move-Item -Path (Join-Path -Path $sourceDirectory2 -ChildPath $subfolderName) -Destination $destinationDirectory -Force
         Write-Host "Moved subfolder '$subfolderName' from source directory 2 to '$destinationDirectory'"
     }
