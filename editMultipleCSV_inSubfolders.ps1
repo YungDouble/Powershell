@@ -8,13 +8,18 @@ Get-ChildItem -Path $rootPath -Recurse -Include *.csv | ForEach-Object {
 
     # Modify the CSV data as needed
     $csv | ForEach-Object {
- 				$_.DocSuperCategory = "Accounts Payable 23-24"
-                $_.DocCategory = "Accounts Payable 23-24"
-                $_.DocType = "Accounts Payable 23-24"
-                $_.DateofBirth = "1/1/1753"
-                $_.FirstName = "Admin"
-                $_.LastName = "STN"
-                $_.IdentificationNumber = "STN-AR-123"
+ 				#$_.DocSuperCategory = "Accounts Payable 23-24"
+                #$_.DocCategory = "Accounts Payable 23-24"
+                #$_.DocType = "Accounts Payable 23-24"
+                #$_.DateofBirth = "1/1/1753"
+                #$_.FirstName = "Admin"
+                #$_.LastName = "STN"
+                #$_.IdentificationNumber = "STN-AR-123"
+
+                # Clean up the status column
+                if($_.Status) {
+                $_.Status = $_.Status.Trim('',"")
+                }
                 
     }
 
