@@ -18,7 +18,7 @@ Get-ChildItem -Path $rootPath -Recurse -Include *.csv | ForEach-Object {
 
                 # Clean up the status column
                 if($_.Status) {
-                $_.Status = $_.Status.Trim('',"")
+                $_.Status = $_.Status.Trim(" ",'"')
                 }
                 
     }
