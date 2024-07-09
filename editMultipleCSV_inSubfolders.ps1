@@ -16,10 +16,11 @@ Get-ChildItem -Path $rootPath -Recurse -Include *.csv | ForEach-Object {
                 #$_.LastName = "STN"
                 #$_.IdentificationNumber = "STN-AR-123"
 
-                # Clean up the status column
-                if($_.Status) {
-                $_.Status = $_.Status.Trim(" ",'"')
-                }
+# Clean up the Status column by removing leading/trailing spaces and quotes
+        if ($_.Status) {
+            $_.Status = $_.Status.Trim()
+            $_.Status = $_.Status.Replace('"', '').Trim()
+        }
                 
     }
 
