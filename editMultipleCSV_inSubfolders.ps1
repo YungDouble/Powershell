@@ -1,4 +1,4 @@
-
+# path is the current working folder
 $rootPath = "./"
 
 # Get all CSV files in the root folder and its subfolders
