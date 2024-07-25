@@ -1,45 +1,20 @@
-# Define the start and end strings to search for
-$searchStringStart = "mark currentfile"
-$searchStringEnd = "cleartomark"
-# Define the replacement string
-$replacementString = ""
+# This script is to convert .ps files to .pdf using gs
+# Set the path to the Ghostscript executable
+$ghostscriptPath = "C:\Program Files\gs\gs10.02.1\bin\gswin64c.exe"
+# Set the root folder where you want to start the conversion
+# this is set to be in the current folder, command: powershell__ise.exe to bring up the powershell console
+$rootFolder = "./"
 
-# Get all .ps files in the directory recursively
-$files = Get-ChildItem -Path "./" -Recurse -Filter "*.ps"
+# Recursively find all .ps files in subfolders
+$psFiles = Get-ChildItem -Path $rootFolder -Recurse -Filter *.tif
+$psFiles = Get-ChildItem -Path $rootFolder -Recurse -Filter *.ps
 
-# Loop through each file
-foreach ($file in $files) {
-    # Read the content of the file as a single string
-    $content = Get-Content $file.FullName -Raw
-    
-    # Initialize a variable to track changes
-    $contentModified = $false
-
-    # Loop until no more start and end markers are found
-    do {
-        # Find the start and end indices of the search strings
-        $startIndex = $content.IndexOf($searchStringStart)
-        $endIndex = $content.IndexOf($searchStringEnd, $startIndex + $searchStringStart.Length)
-        
-        # If both the start and end strings are found
-        if ($startIndex -ge 0 -and $endIndex -ge 0) {
-            # Get the content before the start string
-            $before = $content.Substring(0, $startIndex)
-            # Get the content after the end string
-            $after = $content.Substring($endIndex + $searchStringEnd.Length)
-            # Concatenate the content before the start string, the replacement string, and the content after the end string
-            $content = $before + $replacementString + $after
-            # Mark content as modified
-            $contentModified = $true
-        }
-        else {
-            # Exit the loop if no more markers are found
-            break
-        }
-    } while ($true)
-
-    # If the content was modified, write the updated content back to the file
-    if ($contentModified) {
-        Set-Content $file.FullName -Value $content
-    }
+# Loop through each .ps file and convert to .pdf in the same folder
+foreach ($psFile in $psFiles) {
+    # Build the output PDF file path in the same folder
+    $pdfFile = Join-Path -Path $psFile.Directory.FullName -ChildPath ($psFile.BaseName + '.pdf')
+    # Execute the Ghostscript command
+    & $ghostscriptPath -sDEVICE=pdfwrite -o $pdfFile $psFile.FullName
+    # Output status
+    Write-Host "Converted $($psFile.FullName) to $($pdfFile)"
 }
