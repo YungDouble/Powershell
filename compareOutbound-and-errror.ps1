@@ -1,5 +1,5 @@
 # Define the path to the directory where the subfolders are located
-
+# Worked 1031
 $sourceDirectory1 = "./Outbound2"
 $sourceDirectory2 = "./1008_Errors"
 
