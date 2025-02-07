@@ -1,3 +1,35 @@
+<# 
+    Script Name: File Copy Script from CSV  
+    Author: Davos DeHoyos  
+    Date: 2/6/2025  
+    Version: 1.0  
+
+    Description:  
+    This script reads a CSV file containing file paths and copies the specified files  
+    to a designated destination folder on a remote server. If the destination folder  
+    or subfolders do not exist, the script creates them before copying the files.
+
+    Preconditions:  
+    - The CSV file must exist at the specified path (`$csvPath`).  
+    - The CSV file must contain at least two columns:  
+      - `Path`: Full path of the source file to be copied.  
+      - `SubFolder` (if applicable): Name of the subfolder where the file should be placed.  
+    - The source files must be accessible to the script.  
+    - The script must have sufficient permissions to create folders and copy files to the destination.  
+    - If the destination is a network location, the server must be reachable.  
+
+    Postconditions:  
+    - All valid source files are copied to the designated destination folder.  
+    - Missing destination folders are created as needed.  
+    - A log is maintained to track successful copies and errors.  
+    - If any source files are missing, the script logs warnings but continues execution.  
+
+    Notes:  
+    - Running the script as an administrator may be required if permission errors occur.  
+    - If copying files to a network location, ensure the script has proper network access.  
+
+#>
+
 # Specify the path to the CSV file
 $csvPath = "./FileList.csv"
 
