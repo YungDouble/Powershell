@@ -1,3 +1,44 @@
+<#
+.SYNOPSIS
+    This script recursively removes commas from folder and file names within a specified root directory.
+
+.DESCRIPTION
+    The script scans the given root directory (default: current directory "./") and processes all subdirectories and files.
+    It renames any items containing commas by removing them while preserving the original structure.
+
+.PARAMETER rootDirectory
+    Defines the starting directory for processing. Defaults to "./" (current directory).
+
+.FUNCTIONS
+    Remove-Commas
+        - Accepts a file or folder path as input.
+        - Checks if the name contains commas.
+        - If commas are found, removes them and renames the item.
+        - Provides logging for renamed items and skipped paths.
+
+.NOTES
+    - This script ensures that nested folders are renamed first to prevent conflicts.
+    - Uses error handling to prevent failures due to invalid paths or permission issues.
+    - Output messages indicate whether items were renamed or required no changes.
+
+.OUTPUTS
+    - Console messages indicating the status of processed files and folders.
+
+.EXAMPLE
+    # Run the script in the current directory
+    .\Remove-Commas.ps1
+
+    # Specify a different root directory
+    $rootDirectory = "C:\Users\Documents"
+    .\Remove-Commas.ps1
+
+.AUTHOR
+    Davos DeHoyos
+
+.VERSION
+    1.0
+#>
+
 # Define the root directory to start processing
 $rootDirectory = "./"
 
