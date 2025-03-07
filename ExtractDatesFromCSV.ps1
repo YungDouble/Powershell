@@ -91,6 +91,11 @@ $datePatterns = @(
     "\b\d{4}-\d{4}\b",                              # YYYY-YYYY (academic years)
     "\b\d{4}-\d{1,2}\b",                            # YYYY-M (year and month)
     "\b\d{4}\b"                                     # Standalone Year (YYYY)
+    "\b\d{1,2}\.\d{1,2}\.\d{2,4}\b",                # M.D.YY or M.D.YYYY (e.g., 4.18.23)
+    "\b\d{1,2}-\d{1,2}-\d{2,4}\b",                  # M-D-YY or M-D-YYYY (e.g., 9-26-22)
+    "\b\d{2}-\d{2}-\d{2}\b",                        # MM-DD-YY (e.g., 06-21-21)
+    "\b\d{2}\.\d{2}\.\d{2,4}\b",                    # MM.DD.YY or MM.DD.YYYY (e.g., 3.16.18)
+    "\b\d{2}-\d{2}[A-Za-z]{2}\b"                    # Academic Year (e.g., 19-20SY)
 )
 
 # Process each row and extract date
