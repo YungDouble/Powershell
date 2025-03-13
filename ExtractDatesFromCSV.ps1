@@ -48,6 +48,18 @@
 #>
 
 # Import CSV file
+<#  
+    SCRIPT: ExtractDatesFromCSV.ps1
+    DESCRIPTION:
+        This script extracts dates embedded in filenames from a CSV file 
+        and outputs a new CSV with the extracted dates.
+
+    EXPECTED OUTPUT:
+        - If a date is found, it's formatted in YYYY-MM-DD.
+        - If no date is found, "No Date Found" is inserted.
+#>
+
+# Define input and output file paths
 $inputFile = "./input.csv"
 $outputFile = "./output.csv"
 
@@ -57,106 +69,90 @@ if (!(Test-Path $inputFile)) {
     exit
 }
 
-# Read CSV with correct encoding
+# Read CSV
 $data = Import-Csv -Path $inputFile -Encoding UTF8
-
-# Debug: Print CSV structure
-Write-Host "Checking CSV Structure..."
-$data | Format-Table -AutoSize | Out-String | Write-Host
-
-# Ensure correct column header
 $columnName = "CustomDocumentName"
 
-# Check if column exists in CSV
+# Ensure column exists
 if (-not ($data | Get-Member -Name $columnName)) {
-    Write-Host "Error: Column '$columnName' not found in CSV file. Check your headers."
+    Write-Host "Error: Column '$columnName' not found in CSV."
     exit
 }
 
-# Debug: Print raw input values
-Write-Host "Debug: Printing first 5 filenames from CSV..."
-$data | Select-Object -First 5 | ForEach-Object { Write-Host "Row: '$($_.$columnName)'" }
-
-# Enhanced Regular Expressions to match additional date formats
+# Regular Expressions for Date Patterns
 $datePatterns = @(
-    "\b\d{4}-\d{2}-\d{2}\b",                        # YYYY-MM-DD
-    "\b\d{4}\.\d{2}\.\d{2}\b",                      # YYYY.MM.DD
-    "\b\d{8}\b",                                    # YYYYMMDD
-    "\b\d{4}-\d{1,2}-\d{1,2}\b",                    # YYYY-M-D (handles missing leading zeros)
-    "\b\d{4}_\d{1,2}_\d{1,2}\b",                    # YYYY_M_D (underscore format)
-    "\b\d{4}\s(?:January|February|March|April|May|June|July|August|September|October|November|December)\b", # YYYY Month
-    "\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s\d{4}\b", # Month YYYY
-    "\b\d{2}-\d{2}-\d{4}\b",                        # MM-DD-YYYY
-    "\b\d{2}_\d{2}_\d{4}\b",                        # MM_DD_YYYY (underscore format)
-    "\b\d{4}-\d{4}\b",                              # YYYY-YYYY (academic years)
-    "\b\d{4}-\d{1,2}\b",                            # YYYY-M (year and month)
-    "\b\d{4}\b"                                     # Standalone Year (YYYY)
-    "\b\d{1,2}\.\d{1,2}\.\d{2,4}\b",                # M.D.YY or M.D.YYYY (e.g., 4.18.23)
-    "\b\d{1,2}-\d{1,2}-\d{2,4}\b",                  # M-D-YY or M-D-YYYY (e.g., 9-26-22)
-    "\b\d{2}-\d{2}-\d{2}\b",                        # MM-DD-YY (e.g., 06-21-21)
-    "\b\d{2}\.\d{2}\.\d{2,4}\b",                    # MM.DD.YY or MM.DD.YYYY (e.g., 3.16.18)
-    "\b\d{2}-\d{2}[A-Za-z]{2}\b"                    # Academic Year (e.g., 19-20SY)
+    "(?<year>\d{4})[-_](?<month>\d{1,2})[-_](?<day>\d{1,2})",  # YYYY-MM-DD or YYYY_M_D
+    "(?<month>\d{1,2})[-_](?<day>\d{1,2})[-_](?<year>\d{4})",  # MM-DD-YYYY or MM_DD_YYYY
+    "(?<month>\d{1,2})[-_](?<day>\d{1,2})[-_](?<year>\d{2})",  # MM-DD-YY (NEW)
+    "(?<year>\d{4})",  # Standalone Year YYYY
+    "(?<startYear>\d{2})[-_](?<endYear>\d{2})"  # Academic Year (22-23)
 )
 
+# Function to convert two-digit year (YY) to four-digit (YYYY)
+function Convert-YYToYYYY ($yy) {
+    $yy = [int]$yy
+    if ($yy -lt 25) {
+    return "20$yy"
+} else {
+    return "19$yy"
+}
+
+}
+
+# Function to format date correctly
+function Convert-ToDate ($year, $month, $day) {
+    return "{0:D4}-{1:D2}-{2:D2}" -f $year, $month, $day
+}
+
 # Process each row and extract date
-$results = $data | ForEach-Object {
-    $filename = $_.$columnName  # Correct column reference
+$results = @()
+foreach ($row in $data) {
+    $filename = $row.$columnName
 
     if (-not $filename -or $filename -match "^\s*$") {
-        Write-Host "Warning: Empty or malformed filename entry detected. Skipping."
-        return
+        Write-Host "Warning: Empty filename detected. Assigning 'No Date Found'."
+        $results += [PSCustomObject]@{ Filename = $filename; ExtractedDate = "No Date Found" }
+        continue
     }
 
     Write-Host "Processing: $filename"
 
-    # Replace underscores with dashes for consistency
-    $normalizedFilename = $filename -replace "_", "-"
-
-    # Try matching multiple date formats
+    $normalizedFilename = $filename -replace "_", "-"  # Normalize underscores to dashes
     $dateExtracted = "No Date Found"
+
     foreach ($pattern in $datePatterns) {
         $match = [regex]::Match($normalizedFilename, $pattern)
         if ($match.Success) {
-            $dateExtracted = $match.Groups[0].Value
-
-            # Convert YYYY_M_D format to YYYY-MM-DD
-            if ($dateExtracted -match "^\d{4}_\d{1,2}_\d{1,2}$") {
-                $dateExtracted = $dateExtracted -replace "_", "-"
+            if ($match.Groups["year"].Success -and $match.Groups["month"].Success -and $match.Groups["day"].Success) {
+                # MM-DD-YYYY or YYYY-MM-DD formats
+                $year = $match.Groups["year"].Value
+                $dateExtracted = Convert-ToDate $year $match.Groups["month"].Value $match.Groups["day"].Value
             }
-
-            # Convert MM_DD_YYYY format to YYYY-MM-DD
-            if ($dateExtracted -match "^\d{2}_\d{2}_\d{4}$") {
-                $parts = $dateExtracted -split "_"
-                $dateExtracted = "$($parts[2])-$($parts[0])-$($parts[1])"
+            elseif ($match.Groups["month"].Success -and $match.Groups["day"].Success -and $match.Groups["year"].Success -and $match.Groups["year"].Value.Length -eq 2) {
+                # MM-DD-YY Format (Convert to YYYY)
+                $year = Convert-YYToYYYY $match.Groups["year"].Value
+                $dateExtracted = Convert-ToDate $year $match.Groups["month"].Value $match.Groups["day"].Value
             }
-
-            # Handle academic years (e.g., 2023-2024 → default to first day of the academic year)
-            if ($dateExtracted -match "^\d{4}-\d{4}$") {
-                $dateExtracted = "$($dateExtracted.Substring(0,4))-08-01"
+            elseif ($match.Groups["startYear"].Success -and $match.Groups["endYear"].Success) {
+                # Academic year (e.g., 22-23 → 2022-08-01)
+                $fullYear = "20{0}" -f $match.Groups["startYear"].Value
+                $dateExtracted = Convert-ToDate $fullYear "08" "01"
             }
-            # Handle year-month (YYYY-M)
-            elseif ($dateExtracted -match "^\d{4}-\d{1,2}$") {
-                $dateExtracted += "-01"
-            }
-            # Handle standalone year (YYYY)
-            elseif ($dateExtracted -match "^\d{4}$") {
-                $dateExtracted += "-01-01"
+            elseif ($match.Groups["year"].Success) {
+                # Standalone Year (YYYY)
+                $dateExtracted = Convert-ToDate $match.Groups["year"].Value "01" "01"
             }
             Write-Host "Match found: $dateExtracted"
-            break  # Stop at first successful match
+            break
         }
     }
 
-    if ($dateExtracted -eq "No Date Found") {
-        Write-Host "No date found in: $filename"
-    }
-
-    [PSCustomObject]@{
-        Filename = $filename
-        ExtractedDate = $dateExtracted
-    }
+    $results += [PSCustomObject]@{ Filename = $filename; ExtractedDate = $dateExtracted }
 }
 
-# Export results to CSV
+# Export results
 $results | Export-Csv -Path $outputFile -NoTypeInformation -Encoding UTF8
-Write-Host "Date extraction complete. Output saved to $outputFile"
+Write-Host "Processing complete. Output saved to $outputFile"
+
+
+
