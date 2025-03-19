@@ -79,12 +79,12 @@ if (-not ($data | Get-Member -Name $columnName)) {
     exit
 }
 
-# Regular Expressions for Date Patterns
+# Regular Expressions for Strict Date Patterns
 $datePatterns = @(
-    "(?<year>\d{4})[-_](?<month>\d{1,2})[-_](?<day>\d{1,2})",  # YYYY-MM-DD or YYYY_M_D
-    "(?<month>\d{1,2})[-_](?<day>\d{1,2})[-_](?<year>\d{4})",  # MM-DD-YYYY or MM_DD_YYYY
-    "(?<month>\d{1,2})[-_](?<day>\d{1,2})[-_](?<year>\d{2})",  # MM-DD-YY (NEW)
-    "(?<year>\d{4})",  # Standalone Year YYYY
+    "(?<year>\d{4})[-_](?<month>0?[1-9]|1[0-2])[-_](?<day>0?[1-9]|[12]\d|3[01])",  # YYYY-MM-DD or YYYY_M_D
+    "(?<month>0?[1-9]|1[0-2])[-_](?<day>0?[1-9]|[12]\d|3[01])[-_](?<year>\d{4})",  # MM-DD-YYYY or MM_DD_YYYY
+    "(?<month>0?[1-9]|1[0-2])[-_](?<day>0?[1-9]|[12]\d|3[01])[-_](?<year>\d{2})",  # MM-DD-YY (must be converted to YYYY)
+    "(?<year>\d{4})",  # Standalone Year (YYYY) but only if no invalid digits precede it
     "(?<startYear>\d{2})[-_](?<endYear>\d{2})"  # Academic Year (22-23)
 )
 
@@ -92,16 +92,27 @@ $datePatterns = @(
 function Convert-YYToYYYY ($yy) {
     $yy = [int]$yy
     if ($yy -lt 25) {
-    return "20$yy"
-} else {
-    return "19$yy"
+        return "20$yy"
+    } else {
+        return "19$yy"
+    }
 }
 
-}
-
-# Function to format date correctly
+# Function to validate and format a date correctly
 function Convert-ToDate ($year, $month, $day) {
-    return "{0:D4}-{1:D2}-{2:D2}" -f $year, $month, $day
+    $dateString = "{0:D4}-{1:D2}-{2:D2}" -f $year, $month, $day
+    try {
+        $validDate = [datetime]::ParseExact($dateString, "yyyy-MM-dd", $null)
+        return $validDate.ToString("yyyy-MM-dd")  # Returns only if valid
+    }
+    catch {
+        return "No Date Found"  # Rejects invalid dates
+    }
+}
+
+# Function to validate that extracted year is within reasonable range
+function IsValidYear ($year) {
+    return ($year -ge 1900 -and $year -le 2099)  # Rejects nonsense years
 }
 
 # Process each row and extract date
@@ -124,26 +135,43 @@ foreach ($row in $data) {
         $match = [regex]::Match($normalizedFilename, $pattern)
         if ($match.Success) {
             if ($match.Groups["year"].Success -and $match.Groups["month"].Success -and $match.Groups["day"].Success) {
-                # MM-DD-YYYY or YYYY-MM-DD formats
-                $year = $match.Groups["year"].Value
-                $dateExtracted = Convert-ToDate $year $match.Groups["month"].Value $match.Groups["day"].Value
+                # YYYY-MM-DD or MM-DD-YYYY formats
+                $year = [int]$match.Groups["year"].Value
+                $month = [int]$match.Groups["month"].Value
+                $day = [int]$match.Groups["day"].Value
+                if (IsValidYear $year) {
+                    $dateExtracted = Convert-ToDate $year $month $day
+                }
             }
             elseif ($match.Groups["month"].Success -and $match.Groups["day"].Success -and $match.Groups["year"].Success -and $match.Groups["year"].Value.Length -eq 2) {
                 # MM-DD-YY Format (Convert to YYYY)
                 $year = Convert-YYToYYYY $match.Groups["year"].Value
-                $dateExtracted = Convert-ToDate $year $match.Groups["month"].Value $match.Groups["day"].Value
+                $month = [int]$match.Groups["month"].Value
+                $day = [int]$match.Groups["day"].Value
+                if (IsValidYear $year) {
+                    $dateExtracted = Convert-ToDate $year $month $day
+                }
             }
             elseif ($match.Groups["startYear"].Success -and $match.Groups["endYear"].Success) {
                 # Academic year (e.g., 22-23 → 2022-08-01)
                 $fullYear = "20{0}" -f $match.Groups["startYear"].Value
-                $dateExtracted = Convert-ToDate $fullYear "08" "01"
+                if (IsValidYear $fullYear) {
+                    $dateExtracted = Convert-ToDate $fullYear "08" "01"
+                }
             }
             elseif ($match.Groups["year"].Success) {
                 # Standalone Year (YYYY)
-                $dateExtracted = Convert-ToDate $match.Groups["year"].Value "01" "01"
+                $year = [int]$match.Groups["year"].Value
+                if (IsValidYear $year) {
+                    $dateExtracted = Convert-ToDate $year "01" "01"
+                }
             }
-            Write-Host "Match found: $dateExtracted"
-            break
+
+            # Validate extracted date
+            if ($dateExtracted -ne "No Date Found") {
+                Write-Host "Valid Date Extracted: $dateExtracted"
+                break
+            }
         }
     }
 
@@ -153,6 +181,3 @@ foreach ($row in $data) {
 # Export results
 $results | Export-Csv -Path $outputFile -NoTypeInformation -Encoding UTF8
 Write-Host "Processing complete. Output saved to $outputFile"
-
-
-
