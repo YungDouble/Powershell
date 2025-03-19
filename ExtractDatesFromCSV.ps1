@@ -58,7 +58,6 @@
         - If a date is found, it's formatted in YYYY-MM-DD.
         - If no date is found, "No Date Found" is inserted.
 #>
-
 # Define input and output file paths
 $inputFile = "./input.csv"
 $outputFile = "./output.csv"
@@ -81,11 +80,11 @@ if (-not ($data | Get-Member -Name $columnName)) {
 
 # Regular Expressions for Strict Date Patterns
 $datePatterns = @(
-    "(?<year>\d{4})[-_](?<month>0?[1-9]|1[0-2])[-_](?<day>0?[1-9]|[12]\d|3[01])",  # YYYY-MM-DD or YYYY_M_D
-    "(?<month>0?[1-9]|1[0-2])[-_](?<day>0?[1-9]|[12]\d|3[01])[-_](?<year>\d{4})",  # MM-DD-YYYY or MM_DD_YYYY
-    "(?<month>0?[1-9]|1[0-2])[-_](?<day>0?[1-9]|[12]\d|3[01])[-_](?<year>\d{2})",  # MM-DD-YY (must be converted to YYYY)
-    "(?<year>\d{4})",  # Standalone Year (YYYY) but only if no invalid digits precede it
-    "(?<startYear>\d{2})[-_](?<endYear>\d{2})"  # Academic Year (22-23)
+    "(?<year>\d{4})[-_\. ]?(?<month>0?[1-9]|1[0-2])[-_\. ]?(?<day>0?[1-9]|[12]\d|3[01])",  # YYYY-MM-DD, YYYY_M_D
+    "(?<month>0?[1-9]|1[0-2])[-_\. ]?(?<day>0?[1-9]|[12]\d|3[01])[-_\. ]?(?<year>\d{4})",  # MM-DD-YYYY, MM_DD_YYYY
+    "(?<month>0?[1-9]|1[0-2])[-_\. ]?(?<day>0?[1-9]|[12]\d|3[01])[-_\. ]?(?<year>\d{2})",  # MM-DD-YY, MM_DD_YY
+    "(?<year>\d{4})",  # Standalone Year (YYYY)
+    "(?<startYear>\d{2})[-_\. ]?(?<endYear>\d{2})"  # Academic Year (22-23)
 )
 
 # Function to convert two-digit year (YY) to four-digit (YYYY)
@@ -115,6 +114,12 @@ function IsValidYear ($year) {
     return ($year -ge 1900 -and $year -le 2099)  # Rejects nonsense years
 }
 
+# Normalize filename by replacing multiple spaces, underscores, and dashes
+function Normalize-Filename ($filename) {
+    $filename = $filename -replace "[_ \.-]+", "-"  # Convert all separators to single dashes
+    return $filename
+}
+
 # Process each row and extract date
 $results = @()
 foreach ($row in $data) {
@@ -128,7 +133,8 @@ foreach ($row in $data) {
 
     Write-Host "Processing: $filename"
 
-    $normalizedFilename = $filename -replace "_", "-"  # Normalize underscores to dashes
+    # Normalize filename (removes extra spaces, converts separators to "-")
+    $normalizedFilename = Normalize-Filename $filename
     $dateExtracted = "No Date Found"
 
     foreach ($pattern in $datePatterns) {
@@ -181,3 +187,4 @@ foreach ($row in $data) {
 # Export results
 $results | Export-Csv -Path $outputFile -NoTypeInformation -Encoding UTF8
 Write-Host "Processing complete. Output saved to $outputFile"
+
