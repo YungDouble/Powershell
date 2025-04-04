@@ -1,6 +1,16 @@
+<#
+    ExtractDatesFromCSV.ps1
+    DESCRIPTION:
+        Extracts and standardizes dates from a column in a CSV file.
+        Adds a new column 'ExtractedDate' while preserving all original data.
+#>
+
 # Define input and output file paths
 $inputFile = "./input.csv"
 $outputFile = "./output.csv"
+
+# The column that contains the filenames/text to extract from
+$columnName = "CustomDocumentName"
 
 # Ensure input file exists
 if (!(Test-Path $inputFile)) {
@@ -10,7 +20,6 @@ if (!(Test-Path $inputFile)) {
 
 # Read CSV
 $data = Import-Csv -Path $inputFile -Encoding UTF8
-$columnName = "CustomDocumentName"
 
 # Ensure column exists
 if (-not ($data | Get-Member -Name $columnName)) {
@@ -18,62 +27,83 @@ if (-not ($data | Get-Member -Name $columnName)) {
     exit
 }
 
-# Regular Expressions for Date Patterns (Using Word Boundaries)
+# Regex patterns to match various date formats
 $datePatterns = @(
-    "\b\d{4}-\d{2}-\d{2}\b",                        # YYYY-MM-DD
-    "\b\d{4}\.\d{2}\.\d{2}\b",                      # YYYY.MM.DD
-    "\b\d{8}\b",                                    # YYYYMMDD
-    "\b\d{4}-\d{1,2}-\d{1,2}\b",                    # YYYY-M-D
-    "\b\d{4}_\d{1,2}_\d{1,2}\b",                    # YYYY_M_D
-    "\b\d{1,2}\.\d{1,2}\.\d{2,4}\b",                # M.D.YY or M.D.YYYY (e.g., 4.18.23)
-    "\b\d{1,2}-\d{1,2}-\d{2,4}\b",                  # M-D-YY or M-D-YYYY
-    "\b\d{2}-\d{2}-\d{2}\b",                        # MM-DD-YY
-    "\b\d{2}\.\d{2}\.\d{2,4}\b",                    # MM.DD.YY or MM.DD.YYYY
-    "\b\d{4}-\d{4}\b",                              # YYYY-YYYY (academic years)
-    "(?<year>\d{4})[-_.](?<month>\d{1,2})[-_.](?<day>\d{1,2})",  # YYYY-MM-DD, YYYY_M_D (Fixes Underscore)
-    "(?<month>\d{1,2})[-_.](?<day>\d{1,2})[-_.](?<year>\d{4})",  # MM-DD-YYYY, MM_DD_YYYY
-    "(?<month>\d{1,2})[-_.](?<day>\d{1,2})[-_.](?<year>\d{2})",  # MM-DD-YY
-    "\b\d{4}\b"                                     # Standalone Year YYYY
+    "(?<month>\d{1,2})/(?<day>\d{1,2})/(?<year>\d{2,4})(?=\b|[^0-9])",
+    "(?<month>\d{1,2})[-](?<day>\d{1,2})[-](?<year>\d{2,4})(?=\b|[^0-9])",
+    "(?<month>\d{1,2})\.(?<day>\d{1,2})\.(?<year>\d{2,4})(?=\b|[^0-9])",
+    "(?<year>\d{4})[-_](?<month>\d{1,2})[-_](?<day>\d{1,2})(?=\b|[^0-9])",
+    "(?<month>\d{1,2})[-_](?<day>\d{1,2})[-_](?<year>\d{4})(?=\b|[^0-9])",
+    "(?<month>\d{1,2})[-_](?<day>\d{1,2})[-_](?<year>\d{2})(?=\b|[^0-9])",
+    "(?<monthName>(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*)\s*(?<day>\d{1,2})(?:[/-](?<year>\d{2,4}))?",
+    "(?<year>\d{4})(?=\b|[^0-9])"
 )
 
-# Function to Convert Date to M/D/YYYY Format
-function Convert-ToShortDate ($year, $month, $day) {
-    try {
-        if ($year -lt 1900 -or $year -gt 2099) { return "No Date Found" }
-        if ($month -lt 1 -or $month -gt 12) { return "No Date Found" }
-        if ($day -lt 1 -or $day -gt 31) { return "No Date Found" }
-        return "$month/$day/$year"  # Short date format
-    }
-    catch {
-        return "No Date Found"
-    }
+# Month name to number map
+$monthMap = @{
+    jan = 1; feb = 2; mar = 3; apr = 4; may = 5; jun = 6;
+    jul = 7; aug = 8; sep = 9; oct = 10; nov = 11; dec = 12
 }
 
-# Process Each Row
-$results = @()
-foreach ($row in $data) {
-    $filename = $row.$columnName
-    if (-not $filename) { continue }
+# Function to convert YY to YYYY
+function Convert-YYToYYYY ($yy) {
+    $yy = [int]$yy
+    if ($yy -lt 25) { return "20$yy" } else { return "19$yy" }
+}
 
-    Write-Host "`nProcessing: $filename"
-    
+# Function to format a date as YYYY-MM-DD
+function Convert-ToDate ($year, $month, $day) {
+    if ($year -match "^\d{4}$" -and $month -match "^\d{1,2}$" -and $day -match "^\d{1,2}$") {
+        $month = [int]$month
+        $day = [int]$day
+        if (($month -ge 1 -and $month -le 12) -and ($day -ge 1 -and $day -le 31)) {
+            return "{0:D4}-{1:D2}-{2:D2}" -f $year, $month, $day
+        }
+    }
+    return "No Date Found"
+}
+
+# Process each row and add ExtractedDate
+$updated = foreach ($row in $data) {
+    $filename = $row.$columnName
     $dateExtracted = "No Date Found"
 
-    foreach ($pattern in $datePatterns) {
-        $match = [regex]::Match($filename, $pattern)
-        if ($match.Success) {
-            $year = [int]$match.Groups["year"].Value
-            $month = [int]$match.Groups["month"].Value
-            $day = [int]$match.Groups["day"].Value
+    if ($filename -and $filename -notmatch "^\s*$") {
+        $normalized = $filename -replace "_", "-"
 
-            $dateExtracted = Convert-ToShortDate $year $month $day
-            if ($dateExtracted -ne "No Date Found") { break }
+        foreach ($pattern in $datePatterns) {
+            $match = [regex]::Match($normalized, $pattern)
+            if ($match.Success) {
+                if ($match.Groups["year"].Success -and $match.Groups["month"].Success -and $match.Groups["day"].Success) {
+                    $year = $match.Groups["year"].Value
+                    if ($year.Length -eq 2) { $year = Convert-YYToYYYY $year }
+                    $dateExtracted = Convert-ToDate $year $match.Groups["month"].Value $match.Groups["day"].Value
+                }
+                elseif ($match.Groups["monthName"].Success -and $match.Groups["day"].Success) {
+                    $monthText = $match.Groups["monthName"].Value.ToLower()
+                    $month = $monthMap[$monthText.Substring(0,3)]
+                    $day = $match.Groups["day"].Value
+                    $year = if ($match.Groups["year"].Success) {
+                        $val = $match.Groups["year"].Value
+                        if ($val.Length -eq 2) { Convert-YYToYYYY $val } else { $val }
+                    } else { "2000" }
+                    $dateExtracted = Convert-ToDate $year $month $day
+                }
+                elseif ($match.Groups["year"].Success) {
+                    $dateExtracted = Convert-ToDate $match.Groups["year"].Value "01" "01"
+                }
+
+                if ($dateExtracted -ne "No Date Found") { break }
+            }
         }
     }
 
-    $results += [PSCustomObject]@{ Filename = $filename; ExtractedDate = $dateExtracted }
+    # Add the ExtractedDate as a new property while preserving all original fields
+    $newRow = $row.PSObject.Copy()
+    $newRow | Add-Member -NotePropertyName "ExtractedDate" -NotePropertyValue $dateExtracted
+    $newRow
 }
 
-# Export Results
-$results | Export-Csv -Path $outputFile -NoTypeInformation -Encoding UTF8
-Write-Host "Processing complete. Output saved to $outputFile"
+# Export
+$updated | Export-Csv -Path $outputFile -NoTypeInformation -Encoding UTF8
+Write-Host "✅ Done! Output saved to $outputFile"
