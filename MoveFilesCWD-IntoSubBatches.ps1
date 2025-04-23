@@ -59,15 +59,16 @@ foreach ($entry in $fileList) {
         continue
     }
 
-    # Copy the file
+    # Move the file
     try {
-        Copy-Item -Path $sourcePath -Destination $destinationFile -Force -ErrorAction Stop
-        Write-Host "Copied: $sourcePath → $destinationFile"
-        Write-Log "SUCCESS: Copied $sourcePath → $destinationFile"
+        Move-Item -Path $sourcePath -Destination $destinationFile -Force -ErrorAction Stop
+        Write-Host "Moved: $sourcePath → $destinationFile"
+        Write-Log "SUCCESS: Moved $sourcePath → $destinationFile"
     } catch {
-        Write-Host "Failed to copy $sourcePath - $($_.Exception.Message)"
-        Write-Log "ERROR: Failed to copy $sourcePath → $destinationFile - $($_.Exception.Message)"
+        Write-Host "Failed to move $sourcePath - $($_.Exception.Message)"
+        Write-Log "ERROR: Failed to move $sourcePath → $destinationFile - $($_.Exception.Message)"
     }
+
 }
 
 Write-Host "✅ Copy process complete."
