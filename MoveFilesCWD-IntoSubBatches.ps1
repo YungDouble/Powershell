@@ -1,3 +1,25 @@
+<#
+    Script Name: MoveFilesByCSV.ps1
+    Description: 
+        This script reads a CSV file containing file paths and target subfolder names, 
+        and moves each file into its designated subfolder under a root directory ("SubParts"). 
+        It logs all actions (successes, warnings, errors) to a text log file.
+
+    CSV Format:
+        The CSV must have at least two columns:
+        - Path: relative or absolute path to the source file
+        - Subpart: name of the destination subfolder under ./SubParts/
+
+    Key Features:
+        - Validates input file and folder paths
+        - Creates missing subfolders automatically
+        - Logs moved files, missing files, and any errors encountered
+        - Designed to run from the same directory as the source files
+
+    Author: YellowFolder Support
+    Date: April 2025
+#>
+
 # CSV file path
 $csvPath = "./FileList.csv"
 
