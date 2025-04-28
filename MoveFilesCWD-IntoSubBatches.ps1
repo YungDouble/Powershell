@@ -81,7 +81,7 @@ foreach ($entry in $fileList) {
         continue
     }
 
-    # Move the file
+    # Move the file, may need to have option to have this move versus copy
     try {
         Move-Item -Path $sourcePath -Destination $destinationFile -Force -ErrorAction Stop
         Write-Host "Moved: $sourcePath → $destinationFile"
